@@ -22,3 +22,8 @@ Desktop.ini
 
 # Lokalne podglądy
 bookflow-preview.png
+
+# Prywatna baza, sesje i kopie bezpieczeństwa
+data/
+*.sqlite
+*.sqlite.*

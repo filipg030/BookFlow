@@ -2,12 +2,19 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { openDatabase } from './backend/database.mjs';
+import { createAuth } from './backend/auth.mjs';
 
 const root = path.resolve(fileURLToPath(new URL('./public/', import.meta.url)));
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml' };
+const db = await openDatabase(path.resolve(process.env.BOOKFLOW_DB || fileURLToPath(new URL('./data/bookflow.sqlite', import.meta.url))));
+const auth = await createAuth(db);
 const server = http.createServer(async (req, res) => {
   try {
+    if (!/^(127\.0\.0\.1|localhost)(:\d+)?$/.test(req.headers.host || '')) { res.writeHead(403).end(); return; }
     const url = new URL(req.url, 'http://localhost');
+    if (await auth(req,res,url)) return;
+    if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
     const pathname = decodeURIComponent(url.pathname);
     const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!file.startsWith(root + path.sep) && file !== path.join(root, 'index.html')) {
@@ -18,4 +25,7 @@ const server = http.createServer(async (req, res) => {
     res.end(body);
   } catch { res.writeHead(404).end('Nie znaleziono strony'); }
 });
-server.listen(4173, '127.0.0.1', () => console.log('BookFlow: http://127.0.0.1:4173'));
+server.listen(Number(process.env.PORT || 4174), '127.0.0.1', () => console.log(`BookFlow: http://127.0.0.1:${server.address().port}`));
+server.on('error', error => { db.close(); console.error(error.message); process.exitCode = 1; });
+process.on('exit',()=>db.close());
+for (const signal of ['SIGINT','SIGTERM']) process.on(signal,()=>server.close(()=>{db.close();process.exit(0);}));

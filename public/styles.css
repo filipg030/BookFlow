@@ -8,3 +8,4 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 .hero-book .cover strong{font-size:25px;overflow-wrap:normal}.hero-book .cover.orange strong{font-size:30px}@media(max-width:960px){.hero-book .cover strong{font-size:23px}}
 
+.form-error{color:#a62424;font-size:12px;line-height:1.6}button:disabled{opacity:.55;cursor:wait}

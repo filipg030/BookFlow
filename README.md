@@ -1,45 +1,48 @@
-# BookFlow — lokalny mock aplikacji
+# BookFlow — lokalna aplikacja
 
-Interaktywny szkielet oparty na `BookFlow-specyfikacja-MVP.md`. Biało-miętowy interfejs, responsywny katalog i autorskie okładki demonstracyjne. Bez dostaw, kurierów, płatności i wdrożenia.
+Etap 1 przejścia z demo: rzeczywiste konta na backendzie Node.js i bazie SQLite. Szczegóły schematu, bezpieczeństwa, API, konfiguracji, kopii i ograniczeń: [DATABASE.md](DATABASE.md).
 
 ## Uruchomienie
 
-Wymagany Node.js 20 lub nowszy. Nie trzeba instalować pakietów.
+Wymagany Node.js >=20.
 
 ```powershell
 cd E:\BookFlow
+npm ci
 npm run dev
 ```
 
-Otwórz http://127.0.0.1:4173. Zatrzymanie serwera: Ctrl+C. Serwer nasłuchuje tylko lokalnie.
+Domyślny adres: http://127.0.0.1:4174. Port 4173 był używany przez stary serwer demo bez API kont — nie korzystaj z niego. Jeśli aktualny serwer już działa, otwórz jego adres zamiast uruchamiać drugi proces. Można uruchomić tylko jeden proces korzystający z tej samej bazy.
 
-## Co można sprawdzić
+## Co działa rzeczywiście
 
-- Odkrywanie książek, filtrowanie kategorii, wyszukiwanie tytułu/autora bez polskich znaków, sortowanie i proste rekomendacje na podstawie zapisanych kategorii.
-- Szczegóły książki, profile czytelników i przykładowe opinie.
-- Logowanie i rejestracja **symulowane**: dowolne imię i poprawnie sformatowany e-mail. Brak haseł, prawdziwego uwierzytelniania i wysyłki e-maili. E-mail nie jest utrwalany.
-- Zapisywanie ulubionych, dodawanie własnego egzemplarza z generowaną okładką i wycofanie oferty.
-- Lokalne rozmowy, wysyłanie wiadomości i propozycja wymiany własnej książki.
-- Przycisk „Symuluj udaną wymianę” odblokowuje pojedynczą opinię widoczną na profilu partnera.
+- Rejestracja przez imię, e-mail i hasło (12–128 znaków).
+- Logowanie, sesja utrzymywana przez 7 dni i wylogowanie po stronie serwera.
+- Zmiana hasła z unieważnieniem pozostałych sesji.
+- Konto zapisywane w `data/bookflow.sqlite`, bez kont domyślnych i haseł jawnych.
+- Walidacja i limity prób na backendzie, kontrola pochodzenia żądań.
 
-Dane utrwalane są pod kluczem `bookflow-v1` w localStorage. Konto jest jedną wspólną lokalną personą demo, nie systemem wielu użytkowników. Wylogowanie nie usuwa danych; zmiana imienia zmienia nazwę tej samej persony. Wszystkie wiadomości są lokalne — nie docierają do prawdziwych osób. Oceny początkowe i liczby wymian są danymi przykładowymi; nowe opinie nie przeliczają statystyk demonstracyjnych. Zresetuj demo przez usunięcie klucza localStorage w narzędziach przeglądarki.
+Utwórz konto przez „Zaloguj się” → „Załóż konto”. Stare logowanie demo nie jest kontem i nie zostaje przeniesione. Weryfikacja adresu i odzyskiwanie zapomnianego hasła przez e-mail nie są jeszcze wdrożone.
 
-## Struktura
+## Co nadal jest demonstracją
 
-- `public/index.html` — powłoka i dialog.
-- `public/app.js` — widoki, formularze, zdarzenia i lokalny stan.
-- `public/data.js` — przykładowe dane i czyste funkcje katalogu.
-- `public/styles.css` — system wizualny i responsywność.
-- `server.mjs` — lokalny serwer statyczny bez zależności.
-- `tests/catalog.test.mjs` — testy wyszukiwania, filtrów i rekomendacji.
+Katalog, rekomendacje, ulubione, własne oferty, chat, wymiany i opinie. Lokalny stan jest rozdzielony kluczem `bookflow-demo:<UUID>`, lecz nie jest synchronizowany ani chroniony jak dane serwerowe. Rozmowy nie docierają do prawdziwych osób. Okładki są generowane z CSS. Nowe konta nie dziedziczą cudzych ofert ani danych starego `bookflow-v1`.
+
+Brak dostaw, kurierów, płatności i deploymentu. Google Fonts jest opcjonalnym zasobem sieciowym; bez sieci działają fonty zastępcze. Nie wystawiaj tej wersji publicznie: baza i konta są pierwszym etapem, nie kompletnym systemem produkcyjnym.
+
+## Pliki
+
+- `public/` — interfejs, lokalny stan demo, dane katalogu i style.
+- `server.mjs` — lokalny HTTP i routing API.
+- `backend/auth.mjs` — konta, hasła, sesje i limity.
+- `backend/database.mjs` — baza i inicjalizacja schematu.
+- `data/` — prywatne dane ignorowane przez Git.
+- `tests/` — testy katalogu i integracyjne testy kont z osobną bazą tymczasową.
 
 ```powershell
 npm run check
 npm test
 ```
 
-Wariant mock świadomie używa modułów JavaScript i CSS zamiast Next.js/Supabase z docelowej specyfikacji: nie wymaga backendu, konfiguracji usług ani instalacji zależności. Google Fonts jest opcjonalnym zasobem sieciowym; bez internetu działają czcionki zastępcze i wszystkie funkcje. Książki nie używają zewnętrznych zdjęć ani prawdziwych skanów okładek.
+Następny etap: przeniesienie ofert i rozmów do bazy z autoryzacją użytkowników, następnie poczta i przygotowanie infrastruktury produkcyjnej.
 
-## Granice prototypu
-
-Brak rzeczywistej autoryzacji, wieloużytkownikowości, synchronizacji, uploadu zdjęć, backendowej walidacji, rezerwacji transakcyjnych i integracji. Dane wejściowe są escapowane w HTML, ale localStorage nie jest bazą ani granicą bezpieczeństwa. Nie używaj prawdziwych danych osobowych. Ewentualna realizacja produkcyjna wymaga oddzielnej implementacji według zatwierdzonego zakresu.
