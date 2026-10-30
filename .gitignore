@@ -1,0 +1,24 @@
+# Zależności
+node_modules/
+
+# Lokalne zmienne i sekrety
+.env
+.env.*
+!.env.example
+
+# Logi
+*.log
+npm-debug.log*
+
+# Wyniki testów
+coverage/
+test-results/
+playwright-report/
+
+# Pliki systemowe
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Lokalne podglądy
+bookflow-preview.png

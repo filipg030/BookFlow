@@ -1,0 +1,26 @@
+export const categories = ['Wszystkie', 'Literatura piękna', 'Thriller', 'Fantastyka', 'Rozwój osobisty', 'Romans', 'Podręczniki'];
+export const people = {
+  anna: { name: 'Anna Kowalska', city: 'Warszawa', initials: 'AK', color: '#eeddd0', bio: 'Czytam przy kawie, zaginam rogi tylko w życiu. Najchętniej sięgam po literaturę piękną i historie, które zostają na dłużej.', rating: '4.9', count: 24 },
+  michal: { name: 'Michał Nowak', city: 'Kraków', initials: 'MN', color: '#d8e3ef', bio: 'Jeszcze jeden rozdział… i tak do drugiej w nocy. Na mojej półce królują thrillery i fantastyka.', rating: '5.0', count: 18 },
+  julia: { name: 'Julia Wiśniewska', city: 'Wrocław', initials: 'JW', color: '#eddfec', bio: 'Książki są po to, żeby krążyć. Dzielę się dobrymi historiami i szukam kolejnych.', rating: '4.8', count: 12 },
+  me: { name: 'Ola Zielińska', city: 'Poznań', initials: 'OZ', color: '#d9f5e5', bio: 'Zawsze mam miejsce na kolejną dobrą historię. Wymieniam przeczytane książki i odkrywam nowych autorów.', rating: '5.0', count: 8 }
+};
+export const seedBooks = [
+  { id: 'b1', title: 'Normalni ludzie', author: 'Sally Rooney', category: 'Literatura piękna', owner: 'anna', condition: 'Bardzo dobry', theme: 'olive', art: 'people', kicker: 'SALLY ROONEY', subtitle: 'Normalni\nludzie', note: 'Bliskość nie zawsze jest prosta.', description: 'Piękna, subtelna historia o bliskości. Przeczytana raz, bez notatek i zagiętych rogów. Drobne ślady na krawędzi okładki.', age: 1 },
+  { id: 'b2', title: 'Ciche dni', author: 'Abdulrazak Gurnah', category: 'Literatura piękna', owner: 'michal', condition: 'Jak nowa', theme: 'orange', art: 'sun', kicker: 'ABDULRAZAK GURNAH', subtitle: 'CICHE\nDNI', note: 'Laureat Literackiej Nagrody Nobla', description: 'Opowieść o pamięci, rodzinie i szukaniu swojego miejsca. Egzemplarz w świetnym stanie, bez śladów użytkowania.', age: 2 },
+  { id: 'b3', title: 'Diuna', author: 'Frank Herbert', category: 'Fantastyka', owner: 'julia', condition: 'Dobry', theme: 'sand', art: 'planet', kicker: 'FRANK HERBERT', subtitle: 'DIUNA', note: 'Każda legenda ma swój początek.', description: 'Klasyka science fiction. Miękka oprawa, delikatne zagięcia grzbietu, kompletne i czyste strony.', age: 3 },
+  { id: 'b4', title: 'Atomowe nawyki', author: 'James Clear', category: 'Rozwój osobisty', owner: 'anna', condition: 'Bardzo dobry', theme: 'cream', art: 'dots', kicker: 'JAMES CLEAR', subtitle: 'Atomowe\nnawyki', note: 'Małe zmiany. Niezwykłe efekty.', description: 'Praktyczna książka o małych krokach. Bez podkreśleń, kilka delikatnych śladów na okładce.', age: 4 },
+  { id: 'b5', title: 'Pacjentka', author: 'Alex Michaelides', category: 'Thriller', owner: 'michal', condition: 'Bardzo dobry', theme: 'red', art: 'window', kicker: 'ALEX MICHAELIDES', subtitle: 'PACJENTKA', note: 'Jej milczenie skrywa wszystko.', description: 'Wciągający thriller na jeden weekend. Książka zadbana, z lekkim otarciem dolnego rogu.', age: 5 },
+  { id: 'b6', title: 'Duma i uprzedzenie', author: 'Jane Austen', category: 'Romans', owner: 'julia', condition: 'Jak nowa', theme: 'pink', art: 'flower', kicker: 'JANE AUSTEN', subtitle: 'Duma\ni uprzedzenie', note: 'Historie, do których się wraca.', description: 'Klasyczny romans w pięknym wydaniu. Przeczytana raz, bez uszkodzeń.', age: 6 },
+  { id: 'b7', title: 'Matematyka. Zbiór zadań', author: 'Marcin Kurczab', category: 'Podręczniki', owner: 'michal', condition: 'Dobry', theme: 'blue', art: 'dots', kicker: 'MARCIN KURCZAB', subtitle: 'Matematyka', note: 'Zbiór zadań • zakres rozszerzony', description: 'Zbiór zadań do liceum. Kilka zaznaczeń ołówkiem, wszystkie strony kompletne.', age: 7 },
+  { id: 'b8', title: 'Mały Książę', author: 'Antoine de Saint-Exupéry', category: 'Literatura piękna', owner: 'me', condition: 'Bardzo dobry', theme: 'blue', art: 'planet', kicker: 'ANTOINE DE SAINT-EXUPÉRY', subtitle: 'Mały\nKsiążę', note: 'Dobrze widzi się tylko sercem.', description: 'Moja ulubiona historia, gotowa na kolejnego czytelnika. Czyste strony i zadbana okładka.', age: 8 }
+];
+export const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/Ł/g, 'L').toLowerCase().trim();
+export function selectBooks(books, { query = '', category = 'Wszystkie', view = 'discover', favorites = [], sort = 'recommended' } = {}) {
+  const q = normalize(query);
+  const saved = books.filter(b => favorites.includes(b.id));
+  const score = b => saved.filter(s => s.category === b.category).length * 3 + saved.filter(s => s.author === b.author).length * 2 - b.age / 100;
+  return books.filter(b => !b.withdrawn && (view === 'shelf' ? b.owner === 'me' : view === 'saved' ? favorites.includes(b.id) : b.owner !== 'me') && (category === 'Wszystkie' || b.category === category) && q.split(/\s+/).every(word => normalize(`${b.title} ${b.author}`).includes(word)))
+    .sort((a,b) => sort === 'title' ? a.title.localeCompare(b.title, 'pl') : sort === 'newest' ? a.age - b.age : score(b) - score(a));
+}
+export const seedThreads = [{ id: 't1', bookId: 'b1', person: 'anna', messages: [{ text: 'Cześć! Widzę, że też lubisz historie, które zostają w głowie. „Normalni ludzie” są jeszcze dostępni 😊', mine: false, time: '10:24' }], status: 'chat' }];

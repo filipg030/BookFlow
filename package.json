@@ -1,0 +1,13 @@
+{
+  "name": "bookflow-local",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "test": "node --test tests/catalog.test.mjs",
+    "check": "node --check public/app.js && node --check public/data.js && node --check server.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
