@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { api, readApiResponse } from '../public/api.js';
+import { api, booksApi, readApiResponse } from '../public/api.js';
 
 test('Stary serwer 404 tekst: czytelny błąd, bez wysłania hasła', async()=>{
   const calls=[];
@@ -24,4 +24,16 @@ test('Poprawne API rejestruje, a błędy walidacji są zachowane',async()=>{
   });
   assert.equal(result.user.name,'Ala'); assert.equal(calls[1].method,'POST');
   await assert.rejects(readApiResponse(Response.json({error:'Adres jest zajęty'},{status:409})),/Adres jest zajęty/);
+});
+
+test('Klient katalogu wysyła zmiany do API i zachowuje kod konfliktu', async () => {
+  const calls = [];
+  const fetcher = async (url, options) => { calls.push({ url, ...options }); return Response.json({ book: { id: '123' } }); };
+  await booksApi('', 'POST', { title: 'Tytuł' }, fetcher);
+  await booksApi('123', 'PATCH', { title: 'Zmiana', version: 1 }, fetcher);
+  await booksApi('123', 'DELETE', { version: 2 }, fetcher);
+  assert.deepEqual(calls.map(c => [c.url, c.method]), [['/api/books', 'POST'], ['/api/books/123', 'PATCH'], ['/api/books/123', 'DELETE']]);
+  assert.equal(JSON.parse(calls[1].body).version, 1);
+  assert.ok(calls.every(c => c.credentials === 'same-origin' && c.cache === 'no-store'));
+  await assert.rejects(booksApi('123', 'PATCH', {}, async () => Response.json({ error: 'Konflikt wersji' }, { status: 409 })), { status: 409, message: 'Konflikt wersji' });
 });

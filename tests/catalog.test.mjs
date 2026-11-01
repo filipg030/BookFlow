@@ -1,18 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalize, selectBooks, seedBooks } from '../public/data.js';
-test('Wyszukiwanie ignoruje polskie znaki i łączy tytuł z autorem',()=>{
+import { normalize, selectBooks } from '../public/data.js';
+
+const books = [
+  { id: '1', title: 'Normalni ludzie', author: 'Sally Rooney', category: 'Literatura piękna', owner: 'alice', createdAt: 100 },
+  { id: '2', title: 'Diuna', author: 'Frank Herbert', category: 'Fantastyka', owner: 'bob', createdAt: 200 },
+  { id: '3', title: 'Mały Książę', author: 'Antoine de Saint-Exupéry', category: 'Literatura piękna', owner: 'bob', createdAt: 300 }
+];
+
+test('Wyszukiwanie ignoruje polskie znaki i łączy tytuł z autorem', () => {
   assert.equal(normalize('ŁÓDŹ'), 'lodz');
-  assert.deepEqual(selectBooks(seedBooks,{query:'normalni rooney'}).map(b=>b.id),['b1']);
-  assert.equal(selectBooks(seedBooks,{query:'nieistniejący tytuł'}).length,0);
+  assert.deepEqual(selectBooks(books, { query: 'normalni rooney' }).map(b => b.id), ['1']);
+  assert.deepEqual(selectBooks(books, { query: 'maly ksiaze' }).map(b => b.id), ['3']);
+  assert.equal(selectBooks(books, { query: 'nieistniejący tytuł' }).length, 0);
 });
-test('Filtry, ulubione i własna półka nie mieszają ofert',()=>{
-  assert.deepEqual(selectBooks(seedBooks,{category:'Thriller'}).map(b=>b.id),['b5']);
-  assert.deepEqual(selectBooks(seedBooks,{view:'saved',favorites:['b3']}).map(b=>b.id),['b3']);
-  assert.deepEqual(selectBooks(seedBooks,{view:'shelf'}).map(b=>b.id),['b8']);
-  assert.ok(selectBooks(seedBooks).every(b=>b.owner!=='me'));
+
+test('Katalog pokazuje wszystkie oferty, własna półka używa ID sesji', () => {
+  assert.equal(selectBooks(books).length, 3);
+  assert.deepEqual(selectBooks(books, { view: 'shelf', userId: 'alice' }).map(b => b.id), ['1']);
+  assert.deepEqual(selectBooks(books, { view: 'shelf' }), []);
+  assert.deepEqual(selectBooks(books, { view: 'saved', favorites: ['2', 'deleted'] }).map(b => b.id), ['2']);
+  assert.deepEqual(selectBooks([], { favorites: ['1'] }), []);
 });
-test('Wycofane oferty znikają, rekomendacje uwzględniają zapisane kategorie',()=>{
-  assert.equal(selectBooks([{...seedBooks[0],withdrawn:true}]).length,0);
-  assert.equal(selectBooks(seedBooks,{favorites:['b5']})[0].id,'b5');
+
+test('Filtrowanie, daty i rekomendacje nie zmieniają źródłowego katalogu', () => {
+  assert.deepEqual(selectBooks(books, { category: 'Fantastyka' }).map(b => b.id), ['2']);
+  assert.deepEqual(selectBooks(books, { sort: 'newest' }).map(b => b.id), ['3', '2', '1']);
+  assert.equal(selectBooks(books, { favorites: ['2'] })[0].id, '2');
+  assert.deepEqual(books.map(b => b.id), ['1', '2', '3']);
 });

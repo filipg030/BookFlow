@@ -1,0 +1,19 @@
+.hero-empty-art { position: absolute; inset: 40px 20px 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; color: #548565; text-align: center; }
+.hero-empty-art > .icon { width: 110px; height: 110px; stroke-width: 1; }
+.hero-empty-art > span { font: italic 24px/1.3 Georgia, serif; }
+.listing-actions { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+.listing-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+.cover-options { margin-bottom: 20px; }
+.cover-options summary { cursor: pointer; font-size: 12px; padding: 12px 0; }
+.cover-options label:first-of-type { margin-top: 12px; }
+.danger { color: #a62424; }
+.card-owner > button { min-width: 0; }
+.card-owner button > span:last-child { overflow-wrap: anywhere; }
+.detail-content h2, .detail-author, .profile-head h1 { overflow-wrap: anywhere; }
+[data-theme="dark"] .hero-empty-art { color: #9cc8a4; }
+[data-theme="dark"] .danger { color: #ffaaa2; }
+@media(max-width:700px) {
+  .hero-empty-art { inset: 0 20px 60px; }
+  .hero-empty-art > .icon { width: 80px; height: 80px; }
+  .hero-empty-art > span { font-size: 21px; }
+}

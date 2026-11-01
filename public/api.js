@@ -9,8 +9,17 @@ export async function readApiResponse(response) {
   let result;
   try { result = await response.json(); } catch { throw backendError(); }
   if (!result || typeof result !== 'object' || Array.isArray(result)) throw backendError();
-  if (!response.ok) throw new Error(typeof result.error === 'string' ? result.error : 'Nie udało się wykonać operacji. Spróbuj ponownie.');
+  if (!response.ok) throw Object.assign(new Error(typeof result.error === 'string' ? result.error : 'Nie udało się wykonać operacji. Spróbuj ponownie.'), { status: response.status });
   return result;
+}
+
+export async function booksApi(id = '', method = 'GET', data, fetcher = fetch) {
+  const response = await fetcher('/api/books' + (id ? '/' + encodeURIComponent(id) : ''), {
+    method, credentials: 'same-origin', cache: 'no-store',
+    headers: data === undefined ? {} : { 'Content-Type': 'application/json' },
+    body: data === undefined ? undefined : JSON.stringify(data)
+  });
+  return readApiResponse(response);
 }
 
 export async function api(path, data, fetcher = fetch) {

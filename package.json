@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
-    "test": "node --test tests/catalog.test.mjs tests/auth.test.mjs tests/api.test.mjs",
-    "check": "node --check public/app.js && node --check public/data.js && node --check server.mjs && node --check backend/auth.mjs && node --check backend/database.mjs && node --check public/api.js"
+    "test": "node --test tests/catalog.test.mjs tests/auth.test.mjs tests/api.test.mjs tests/books.test.mjs",
+    "check": "node --check public/app.js && node --check public/data.js && node --check server.mjs && node --check backend/auth.mjs && node --check backend/database.mjs && node --check backend/books.mjs && node --check backend/http.mjs && node --check public/api.js"
   },
   "engines": {
     "node": ">=20"

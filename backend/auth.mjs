@@ -1,12 +1,12 @@
 import { randomBytes, randomUUID, createHash, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
+import { fail, readBody, reply, replyError, checkOrigin } from './http.mjs';
 
 const derive = promisify(scrypt);
 const params = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 };
 const sessionSeconds = 7 * 24 * 3600;
 const digest = value => createHash('sha256').update(value).digest('hex');
 const publicUser = user => ({ id: user.id, name: user.name, email: user.email, createdAt: user.created_at });
-const fail = (status, message) => Object.assign(new Error(message), { status });
 async function hashPassword(password) { const salt = randomBytes(16).toString('hex'); const key = await derive(password, salt, 64, params); return `scrypt-v1$${salt}$${key.toString('hex')}`; }
 async function matches(password, encoded) { const [,salt,hash] = encoded.split('$'); const key = await derive(password, salt, 64, params); return timingSafeEqual(key, Buffer.from(hash, 'hex')); }
 function passwordValid(value) { if (typeof value !== 'string' || value.length < 12 || value.length > 128) throw fail(422, 'Hasło musi mieć od 12 do 128 znaków.'); }
@@ -15,13 +15,6 @@ function identity(data) {
   const email = data.email.trim().toLowerCase();
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw fail(422, 'Podaj poprawny adres e-mail.');
   return email;
-}
-async function readBody(req) {
-  if (req.headers['content-type']?.split(';')[0] !== 'application/json') throw fail(415, 'Wymagany format JSON.');
-  let body = '', bytes = 0;
-  for await (const chunk of req) { bytes += chunk.length; if (bytes > 8192) throw fail(413, 'Za duże żądanie.'); body += chunk; }
-  try { const data = JSON.parse(body); if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error(); return data; }
-  catch { throw fail(400, 'Niepoprawne dane JSON.'); }
 }
 export async function createAuth(db) {
   const dummy = await hashPassword(randomBytes(24).toString('hex'));
@@ -42,16 +35,14 @@ export async function createAuth(db) {
     db.run('INSERT INTO sessions VALUES(?,?,?,?)',[digest(token),userId,now,now + sessionSeconds * 1000]);
     return token;
   }
-  function reply(res,status,data) { res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}); res.end(JSON.stringify(data)); }
-  return async function auth(req,res,url) {
-    if (!url.pathname.startsWith('/api/')) return false;
+  async function auth(req,res,url) {
+    if (!url.pathname.startsWith('/api/auth/')) return false;
     try {
       const route = url.pathname;
       if (req.method === 'GET' && route === '/api/auth/me') { const user = session(req); reply(res,200,{user:user ? publicUser(user) : null}); return true; }
       if (req.method !== 'POST') throw fail(405,'Metoda niedozwolona.');
       // Exact host/origin check, no CORS. Required for all state changes, including login.
-      const origin = `http${process.env.COOKIE_SECURE === '1' ? 's' : ''}://${req.headers.host}`;
-      if (req.headers.origin !== origin || req.headers['sec-fetch-site'] === 'cross-site') throw fail(403,'Niedozwolone pochodzenie żądania.');
+      checkOrigin(req);
       const ip = req.socket.remoteAddress;
       rateLimit(`ip:${ip}`,60);
       const data = await readBody(req);
@@ -88,7 +79,9 @@ export async function createAuth(db) {
         const token = db.transaction(()=>{ db.run('UPDATE users SET password_hash=? WHERE id=?',[next,user.id]); db.run('DELETE FROM sessions WHERE user_id=?',[user.id]); return newSession(req,user.id); });
         res.setHeader('Set-Cookie',cookie(token,sessionSeconds)); reply(res,200,{ok:true});
       } else throw fail(404,'Nie znaleziono endpointu.');
-    } catch(error) { if (!error.status) console.error('Błąd API:',error.code || error.name); if (!res.headersSent) reply(res,error.status || 500,{error:error.status ? error.message : 'Błąd serwera. Spróbuj ponownie.'}); }
+    } catch(error) { replyError(res, error); }
     return true;
-  };
+  }
+  auth.session = session;
+  return auth;
 }
